@@ -60,7 +60,9 @@ class Kernel(Explainer):
     """
 
     def __init__(self, model, data, link=IdentityLink(), **kwargs):
-
+        print("initialising explainer")
+        with open('exp_init.txt', 'w') as f:
+            f.write('initialising explainer')
         # convert incoming inputs to standardized iml objects
         self.link = convert_to_link(link)
         self.model = convert_to_model(model)
@@ -141,6 +143,7 @@ class Kernel(Explainer):
             of such matrices, one for each output.
         """
 
+        print("Calculating SHAP values")
         # convert dataframes
         if str(type(X)).endswith("pandas.core.series.Series'>"):
             X = X.values
@@ -198,7 +201,7 @@ class Kernel(Explainer):
                 for i in range(X.shape[0]):
                     for j in range(s[1]):
                         outs[j][i] = explanations[i][:, j]
-                return outs
+                return outs, 1
 
             # single-output
             else:
@@ -272,6 +275,10 @@ class Kernel(Explainer):
 
             # reserve space for some of our computations
             self.allocate()
+
+            print("initial synthetic data:",self.synth_data)
+            print("shape:",len(self.synth_data))
+            print(len(self.synth_data[0]))
 
             # weight the different subset sizes
             num_subset_sizes = np.int(np.ceil((self.M - 1) / 2.0))
@@ -379,6 +386,9 @@ class Kernel(Explainer):
                 self.kernelWeights[nfixed_samples:] *= weight_left / self.kernelWeights[nfixed_samples:].sum()
 
             # execute the model on the synthetic samples we have created
+            print("synthetic samples generated:",self.synth_data)
+            print("shape:",len(self.synth_data))
+            print(len(self.synth_data[0]))
             self.run()
 
             # solve then expand the feature importance (Shapley value) vector to contain the non-varying features

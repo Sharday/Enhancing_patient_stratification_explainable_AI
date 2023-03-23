@@ -3,9 +3,11 @@ from _explanation import Explanation
 # from _explanation import Explanation
 from utils._clustering import hclust
 import numpy as np
+import sys
+# from explainers.test_import import Hello
 
 def get_explainer(model, data, link):
-    print("getting explainer")
+    sys.stdout.write("getting explainer")
 
     # explainer = KernelExplainer(lambda x: np.zeros(x.shape[0]), np.ones((2, 4)), nsamples=100)
     explainer = KernelExplainer(model, data, link)
@@ -22,3 +24,5 @@ def get_clustering(ds, labels):
     return hclust(ds, labels)
 
 # say_hello()
+# explainer = get_explainer(None, None, None)
+# e = explainer.explain(np.ones((1, 4)))
