@@ -180,6 +180,19 @@ def hclust(X, y=None, linkage="single", metric="auto", random_state=0):
     # build linkage
     if linkage == "single":
         return sp.cluster.hierarchy.single(dist)
+    
+        # eg gives:
+    #     array([[ 0.,  1.,  1.,  2.],
+        #    [ 2., 12.,  1.,  3.],
+        #    [ 3.,  4.,  1.,  2.],
+        #    [ 5., 14.,  1.,  3.],
+        #    [ 6.,  7.,  1.,  2.],
+        #    [ 8., 16.,  1.,  3.],
+        #    [ 9., 10.,  1.,  2.],
+        #    [11., 18.,  1.,  3.],
+        #    [13., 15.,  2.,  6.],
+        #    [17., 20.,  2.,  9.],
+        #    [19., 21.,  2., 12.]])
     elif linkage == "complete":
         return sp.cluster.hierarchy.complete(dist)
     elif linkage == "average":
