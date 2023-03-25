@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+from scipy.cluster.hierarchy import single
 from scipy.spatial.distance import pdist
 from numba import jit
 import sklearn
@@ -138,6 +139,7 @@ def xgboost_distances_r2(X, y, learning_rate=0.6, early_stopping_rounds=2, subsa
     return dist
 
 def hclust(X, y=None, linkage="single", metric="auto", random_state=0):
+    print("hclust")
     if safe_isinstance(X, "pandas.core.frame.DataFrame"):
         X = X.values
 
@@ -148,7 +150,9 @@ def hclust(X, y=None, linkage="single", metric="auto", random_state=0):
     # build the distance matrix
     if metric == "xgboost_distances_r2":
         dist_full = xgboost_distances_r2(X, y, random_state=random_state)
-        
+        print("dist_full:")
+        print(dist_full.shape)
+        print(dist_full)
         # build a condensed upper triangular version by taking the max distance from either direction
         dist = []
         for i in range(dist_full.shape[0]):
@@ -179,7 +183,13 @@ def hclust(X, y=None, linkage="single", metric="auto", random_state=0):
 
     # build linkage
     if linkage == "single":
-        return sp.cluster.hierarchy.single(dist)
+        print("dist:",dist)
+        print(len(dist))
+        print("linkage:")
+        
+        clust = single(dist)
+        print(clust)
+        return clust
     
         # eg gives:
     #     array([[ 0.,  1.,  1.,  2.],
