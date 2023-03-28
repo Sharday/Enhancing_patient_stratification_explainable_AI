@@ -22,6 +22,8 @@ from sklearn.model_selection import GridSearchCV
 from scipy.stats import multivariate_normal
 from keras.optimizers import Adam, SGD, Adadelta
 import objects
+import time
+from testp import progressBar
 
 x_train_scaled = pd.read_csv('../260_sample_train_scaled.csv').set_index("Patient_ID")
 x_test_scaled = pd.read_csv('../260_sample_test_scaled.csv').set_index("Patient_ID")
@@ -46,4 +48,25 @@ vec = np.vectorize(classify)
 disease_labels_train = vec(patient_ids_train)
 disease_labels_test = vec(patient_ids_test)
 
-clustering = objects.get_clustering(x_test_scaled, disease_labels_test)
+
+
+# # A List of Items
+# items = list(range(0, 100))
+
+# # A Nicer, Single-Call Usage
+# for item in progressBar(items, prefix = 'Progress:', suffix = 'Complete', length = 50):
+#     # Do stuff...
+#     time.sleep(0.1)
+
+# clustering = objects.get_clustering(x_test_scaled, disease_labels_test)
+compound_model = keras.models.load_model('cd_clf')
+
+
+explainer = objects.get_explainer(model=compound_model.predict, data=x_train_scaled, link="logit")
+# explainer = objects.get_explainer(model=f_dummy, data=x_train_scaled.iloc[:15])
+
+shap_values = explainer.shap_values(X=x_test_scaled)
+print("final shap values:",shap_values)
+
+with open("shap_values_fd_100", "wb") as fp:   #Pickling
+    pickle.dump(shap_values, fp)
