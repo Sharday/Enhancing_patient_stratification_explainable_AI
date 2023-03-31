@@ -68,10 +68,12 @@ class Kernel(Explainer):
     See :ref:`Kernel Explainer Examples <kernel_explainer_examples>`
     """
 
-    def __init__(self, model, data, link=IdentityLink(), feature_dependence=True, vis=False, **kwargs):
+    def __init__(self, model, data, link=IdentityLink(), num_instances=None, specific_indices=None, feature_dependence=True, vis=False, **kwargs):
         print("initialising explainer")
         # with open('exp_init.txt', 'w') as f:
         #     f.write('initialising explainer')
+        self.num_instances = num_instances
+        self.specific_indices = specific_indices
         self.visualise = vis
         self.feature_dependence = feature_dependence
         if feature_dependence:
@@ -130,64 +132,67 @@ class Kernel(Explainer):
         self.gene_stds = x_stats.iloc[1,:].values
         self.gene_vars = np.square(self.gene_stds)
 
-        n = df.shape[1]
-        cov = np.zeros((n,n))
+        # Build covariance matrix using data
+        cov_matrix = np.cov(df.T)
+        # n = df.shape[1]
+
+        # cov = np.zeros((n,n))
         
-        # calculate correlations using KL divergence
+        # # calculate correlations using KL divergence
 
-        # https://jamesmccaffrey.wordpress.com/2021/02/03/the-kullback-leibler-divergence-for-two-gaussian-distributions/
-        def kld_gauss(u1, s1, u2, s2):
-            # general KL two Gaussians
-            # u2, s2 often N(0,1)
-            # https://stats.stackexchange.com/questions/7440/ +
-            # kl-divergence-between-two-univariate-gaussians
-            # log(s2/s1) + [( s1^2 + (u1-u2)^2 ) / 2*s2^2] - 0.5
-            v1 = s1 * s1
-            v2 = s2 * s2
-            if s1 == 0:
-                s1 = 0.005
-            a = np.log(s2/s1) 
-            num = v1 + (u1 - u2)**2
-            den = 2 * v2
-            if den == 0:
-                den = 0.005
-            b = num / den
-            return a + b - 0.5
+        # # https://jamesmccaffrey.wordpress.com/2021/02/03/the-kullback-leibler-divergence-for-two-gaussian-distributions/
+        # def kld_gauss(u1, s1, u2, s2):
+        #     # general KL two Gaussians
+        #     # u2, s2 often N(0,1)
+        #     # https://stats.stackexchange.com/questions/7440/ +
+        #     # kl-divergence-between-two-univariate-gaussians
+        #     # log(s2/s1) + [( s1^2 + (u1-u2)^2 ) / 2*s2^2] - 0.5
+        #     v1 = s1 * s1
+        #     v2 = s2 * s2
+        #     if s1 == 0:
+        #         s1 = 0.005
+        #     a = np.log(s2/s1) 
+        #     num = v1 + (u1 - u2)**2
+        #     den = 2 * v2
+        #     if den == 0:
+        #         den = 0.005
+        #     b = num / den
+        #     return a + b - 0.5
 
-        def build_cov_matrix_corr(gene_means, gene_stds):
-            min_v = inf
-            max_v = -inf
-            for i in range(n):
-                curr_mean = gene_means[i]
-                curr_std = gene_stds[i]
+        # def build_cov_matrix_corr(gene_means, gene_stds):
+        #     min_v = inf
+        #     max_v = -inf
+        #     for i in range(n):
+        #         curr_mean = gene_means[i]
+        #         curr_std = gene_stds[i]
 
-                for j in range(i+1, n):
-                    other_mean = gene_means[j]
-                    other_std = gene_stds[j]
-                    kl = kld_gauss(curr_mean, curr_std, other_mean, other_std)
-                    cov[i][j] = kl
+        #         for j in range(i+1, n):
+        #             other_mean = gene_means[j]
+        #             other_std = gene_stds[j]
+        #             kl = kld_gauss(curr_mean, curr_std, other_mean, other_std)
+        #             cov[i][j] = kl
 
-                    #max/min
-                    min_v = min(min_v, kl)
-                    max_v = max(max_v, kl)
-            return cov, min_v, max_v
+        #             #max/min
+        #             min_v = min(min_v, kl)
+        #             max_v = max(max_v, kl)
+        #     return cov, min_v, max_v
 
-        cov, min_v, max_v = build_cov_matrix_corr(self.gene_means, self.gene_stds)
+        # cov, min_v, max_v = build_cov_matrix_corr(self.gene_means, self.gene_stds)
 
-        nans = np.isnan(cov)
-        assert np.all(nans == False)
-        max_val = 3000
-        cov[cov == -inf] = -max_val #?
-        cov[cov == inf] = max_val
+        # nans = np.isnan(cov)
+        # assert np.all(nans == False)
+        # max_val = 3000
+        # cov[cov == -inf] = -max_val #?
+        # cov[cov == inf] = max_val
 
-        # scale down correlations
-        standard_scaler = MinMaxScaler((0,.1))
-        cov_matrix = standard_scaler.fit_transform(cov)
+        # # scale down correlations
+        # standard_scaler = MinMaxScaler((0,.1))
+        # cov_matrix = standard_scaler.fit_transform(cov)
 
-        # reflection to lower triangle
-        # https://stackoverflow.com/questions/16444930/copy-upper-triangle-to-lower-triangle-in-a-python-matrix
-        i_lower = np.tril_indices(n, -1)
-        cov_matrix[i_lower] = cov_matrix.T[i_lower]  # make the matrix symmetric
+        # # reflection to lower triangle
+        # # https://stackoverflow.com/questions/16444930/copy-upper-triangle-to-lower-triangle-in-a-python-matrix
+        # i_lower = np.tril_indices(n, -1)
+        # cov_matrix[i_lower] = cov_matrix.T[i_lower]  # make the matrix symmetric
 
         # assign variances along diagonal
         np.fill_diagonal(cov_matrix, self.gene_vars)
@@ -272,15 +277,39 @@ class Kernel(Explainer):
         # explain the whole dataset
         elif len(X.shape) == 2:
             explanations = []
-            for i in tqdm(range(X.shape[0]), disable=kwargs.get("silent", False)):
-                data = X[i:i + 1, :]
-                if self.keep_index:
-                    data = convert_to_instance_with_index(data, column_name, index_value[i:i + 1], index_name)
-                print("Explaining instance",i,"...")
-                explanations.append(self.explain(data, **kwargs))
-                print("INSTANCE",i,"COMPLETE")
-                if kwargs.get("gc_collect", False):
-                    gc.collect()
+
+            if self.specific_indices:
+                for i in self.specific_indices:
+                    data = X[i:i + 1, :]
+                    if self.keep_index:
+                        data = convert_to_instance_with_index(data, column_name, index_value[i:i + 1], index_name)
+                    print("Explaining instance",i,"...")
+                    inst_explanation = self.explain(data, **kwargs)
+                    print("explanation:",inst_explanation)
+                    explanations.append(inst_explanation)
+                    print("INSTANCE",i,"COMPLETE")
+                    if kwargs.get("gc_collect", False):
+                        gc.collect()
+
+                s = explanations[0].shape
+                print("explanation[0] shape:",s)
+                outs = [np.zeros((len(self.specific_indices), s[0])) for j in range(s[1])]
+                for i in range(len(self.specific_indices)):
+                    for j in range(s[1]):
+                        outs[j][i] = explanations[i][:, j]
+                return outs, 1
+            else:
+                for i in tqdm(range(X.shape[0]), disable=kwargs.get("silent", False)):
+                    data = X[i:i + 1, :]
+                    if self.keep_index:
+                        data = convert_to_instance_with_index(data, column_name, index_value[i:i + 1], index_name)
+                    print("Explaining instance",i,"...")
+                    explanations.append(self.explain(data, **kwargs))
+                    print("INSTANCE",i,"COMPLETE")
+                    if kwargs.get("gc_collect", False):
+                        gc.collect()
+                    if self.num_instances and i == self.num_instances - 1:
+                        break
 
             # vector-output
             s = explanations[0].shape

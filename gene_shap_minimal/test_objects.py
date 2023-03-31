@@ -62,11 +62,11 @@ disease_labels_test = vec(patient_ids_test)
 compound_model = keras.models.load_model('cd_clf')
 
 
-explainer = objects.get_explainer(model=compound_model.predict, data=x_train_scaled, link="logit")
+explainer = objects.get_explainer(model=compound_model.predict, data=x_train_scaled, link="logit", specific_indices=[77])
 # explainer = objects.get_explainer(model=f_dummy, data=x_train_scaled.iloc[:15])
 
 shap_values = explainer.shap_values(X=x_test_scaled)
 print("final shap values:",shap_values)
 
-with open("shap_values_fd_100", "wb") as fp:   #Pickling
+with open("shap_values_fd_test_77", "wb") as fp:   #Pickling
     pickle.dump(shap_values, fp)
