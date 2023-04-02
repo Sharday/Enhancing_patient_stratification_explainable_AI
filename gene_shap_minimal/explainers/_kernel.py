@@ -134,13 +134,14 @@ class Kernel(Explainer):
 
         # Build covariance matrix using data
         cov_matrix = np.cov(df.T)
+
         # n = df.shape[1]
 
         # cov = np.zeros((n,n))
         
-        # # calculate correlations using KL divergence
+        # calculate correlations using KL divergence
 
-        # # https://jamesmccaffrey.wordpress.com/2021/02/03/the-kullback-leibler-divergence-for-two-gaussian-distributions/
+        # https://jamesmccaffrey.wordpress.com/2021/02/03/the-kullback-leibler-divergence-for-two-gaussian-distributions/
         # def kld_gauss(u1, s1, u2, s2):
         #     # general KL two Gaussians
         #     # u2, s2 often N(0,1)
@@ -188,6 +189,8 @@ class Kernel(Explainer):
         # # scale down correlations
         # standard_scaler = MinMaxScaler((0,.1))
         # cov_matrix = standard_scaler.fit_transform(cov)
+
+        # cov_matrix = .1 - cov_matrix
 
         # # reflection to lower triangle
         # # https://stackoverflow.com/questions/16444930/copy-upper-triangle-to-lower-triangle-in-a-python-matrix
@@ -308,8 +311,6 @@ class Kernel(Explainer):
                     print("INSTANCE",i,"COMPLETE")
                     if kwargs.get("gc_collect", False):
                         gc.collect()
-                    if self.num_instances and i == self.num_instances - 1:
-                        break
 
             # vector-output
             s = explanations[0].shape
@@ -685,7 +686,8 @@ class Kernel(Explainer):
 
         # adjust matrix to make it positive definite 
         w, _ = LA.eig(cov_matrix)
-        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
+        # cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
+        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + .5)*np.identity(n)
 
         patient_sample = self.get_patient_sample(mod_gene_means, cond_cov_matrix, mod_gene_stds, seed)
 
