@@ -42,13 +42,15 @@ test_set = x_test_scaled.copy()
 
 
 def encode_pca(dataset):
-    comp_cols = np.asarray(np.arange(2), dtype=str)
     pca_x_test = PCA(n_components=32)
     principalComponents_x_test = pca_x_test.fit_transform(dataset)
+    if isinstance(dataset,np.ndarray):
+        index = None
+    else:
+        index=dataset.index
     pca_x_test_ds = pd.DataFrame(data = principalComponents_x_test, 
-                                       index=dataset.index)
+                                       index=index)
     return pca_x_test_ds, pca_x_test
-
 
 def load_encoder():
     n_inputs = 219
@@ -78,14 +80,20 @@ def load_encoder():
 
 
 
+
+    
 def ae_encode_dataset(dataset):
     encoder = load_encoder()
     latent_var = np.arange(32)
-    recon = encoder(dataset.values)
-    r = pd.DataFrame(recon, columns=latent_var, index=dataset.index)
+    if isinstance(dataset,np.ndarray):
+        recon = encoder(dataset)
+        index=None
+    else:
+        recon = encoder(dataset.values)
+        index = dataset.index
+    r = pd.DataFrame(recon, columns=latent_var, index=index)
     return r
     
-
 
 
 import matplotlib.pyplot as plt
@@ -178,13 +186,20 @@ def load_gmm(gmm_name):
 
 
 def gmm_model_get_prediction_ae(x_test_scaled):
+
+
     # preprocessing
     # load full dataset
-    full_dataset = full_ds.copy()
-    split_pt = len(full_dataset) - len(x_test_scaled)
-    full_dataset.iloc[split_pt:,:] = x_test_scaled
-    
-    # dim redction - autoencoder
+    smaller_set = False
+    if len(x_test_scaled) < len(full_ds):
+        smaller_set = True
+        full_dataset = full_ds.copy()
+        split_pt = len(full_dataset) - len(x_test_scaled)
+        full_dataset.iloc[split_pt:,:] = x_test_scaled
+    else:
+        full_dataset = x_test_scaled.copy()
+        
+    # dim reduction - autoencoder
     full_ae_dataset = ae_encode_dataset(full_dataset)
     
     # tsne
@@ -197,7 +212,11 @@ def gmm_model_get_prediction_ae(x_test_scaled):
         method='exact'
     )
     X = tsne.fit_transform(full_ae_dataset)
-    X_test = X[split_pt:]
+    if smaller_set:
+        X_test = X[split_pt:]
+    else:
+        X_test = X
+    
     
     filename_assignments = "autoencoder_assignments"
     load_gmm_name = "gmm_autoencoder"
@@ -209,10 +228,14 @@ def gmm_model_get_prediction_ae(x_test_scaled):
     return get_proba(gmm, assignments, X_test)
 
 def gmm_model_get_prediction_pca(x_test_scaled):
-    # preprocessing
-    full_dataset = full_ds.copy()
-    split_pt = len(full_dataset) - len(x_test_scaled)
-    full_dataset.iloc[split_pt:,:] = x_test_scaled
+    smaller_set = False
+    if len(x_test_scaled) < len(full_ds):
+        smaller_set = True
+        full_dataset = full_ds.copy()
+        split_pt = len(full_dataset) - len(x_test_scaled)
+        full_dataset.iloc[split_pt:,:] = x_test_scaled
+    else:
+        full_dataset = x_test_scaled.copy()
     
     # dim redction - PCA
     full_pca_dataset, _ = encode_pca(full_dataset)
@@ -227,7 +250,11 @@ def gmm_model_get_prediction_pca(x_test_scaled):
         method='exact'
     )
     X = tsne.fit_transform(full_pca_dataset)
-    X_test = X[split_pt:]
+    if smaller_set:
+        X_test = X[split_pt:]
+    else:
+        X_test = X
+    
     
     filename_assignments = "PCA_assignments"
     load_gmm_name = "gmm_PCA"
