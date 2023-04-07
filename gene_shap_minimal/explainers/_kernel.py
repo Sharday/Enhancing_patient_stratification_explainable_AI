@@ -400,6 +400,8 @@ class Kernel(Explainer):
             print("shape:",len(self.synth_data))
             print(len(self.synth_data[0]))
 
+            # self.run() ##### TEMP
+
             # weight the different subset sizes
             num_subset_sizes = np.int(np.ceil((self.M - 1) / 2.0))
             num_paired_subset_sizes = np.int(np.floor((self.M - 1) / 2.0))
@@ -687,7 +689,7 @@ class Kernel(Explainer):
         # adjust matrix to make it positive definite 
         w, _ = LA.eig(cov_matrix)
         # cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
-        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + .5)*np.identity(n)
+        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1.)*np.identity(n)
 
         patient_sample = self.get_patient_sample(mod_gene_means, cond_cov_matrix, mod_gene_stds, seed)
 
@@ -721,7 +723,7 @@ class Kernel(Explainer):
         # print("instance:",x)
         offset = self.nsamplesAdded * self.N
         if isinstance(self.varyingFeatureGroups, (list,)):
-            # print("listgroups:",self.varyingFeatureGroups)
+            print("VARYING:",self.varyingFeatureGroups)
             for j in range(self.M):
                 for k in self.varyingFeatureGroups[j]:
                     if m[j] == 1.0:
@@ -762,6 +764,7 @@ class Kernel(Explainer):
         # print("nsamplesAdded:",self.nsamplesAdded)
 
     def run(self):
+        # self.nsamplesAdded = 78*5 ##### TEMP
         num_to_run = self.nsamplesAdded * self.N - self.nsamplesRun * self.N
         data = self.synth_data[self.nsamplesRun*self.N:self.nsamplesAdded*self.N,:]
         if self.keep_index:
@@ -771,13 +774,17 @@ class Kernel(Explainer):
             data = pd.concat([index, data], axis=1).set_index(self.data.index_name)
             if self.keep_index_ordered:
                 data = data.sort_index()
+        print("finding modelout of chunk")
         modelOut = self.model.f(data)
+        print("found modelout of chunk")
         if isinstance(modelOut, (pd.DataFrame, pd.Series)):
             modelOut = modelOut.values
+        print("modelout shape:",modelOut.shape)
         self.y[self.nsamplesRun * self.N:self.nsamplesAdded * self.N, :] = np.reshape(modelOut, (num_to_run, self.D))
 
         # find the expected value of each output
         for i in range(self.nsamplesRun, self.nsamplesAdded):
+            # print("exp",i)
             eyVal = np.zeros(self.D)
             for j in range(0, self.N):
                 eyVal += self.y[i * self.N + j, :] * self.data.weights[j]
@@ -815,7 +822,13 @@ class Kernel(Explainer):
             # use an adaptive regularization method
             elif self.l1_reg == "auto" or self.l1_reg == "bic" or self.l1_reg == "aic":
                 c = "aic" if self.l1_reg == "auto" else self.l1_reg
-                nonzero_inds = np.nonzero(LassoLarsIC(criterion=c).fit(mask_aug, eyAdj_aug).coef_)[0]
+                try:
+                    nonzero_inds = np.nonzero(LassoLarsIC(criterion=c).fit(mask_aug, eyAdj_aug).coef_)[0]
+                except:
+                    print("mask_aug",mask_aug)
+                    print("eyAdj_aug",eyAdj_aug)
+                    sys.exit()
+
 
             # use a fixed regularization coeffcient
             else:
@@ -863,3 +876,9 @@ class Kernel(Explainer):
                 phi[i] = 0
 
         return phi, np.ones(len(phi))
+
+
+                # except:
+                #     print("eyAdj_aug",eyAdj_aug)
+                #     nonzero_inds = np.nonzero(Lasso(alpha=self.l1_reg).fit(mask_aug, eyAdj_aug).coef_)[0]
+                #     print("SWITCHED METHOD")

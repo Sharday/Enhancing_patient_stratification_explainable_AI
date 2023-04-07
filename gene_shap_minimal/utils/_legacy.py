@@ -228,7 +228,8 @@ class LogitLink(Link):
 
     @staticmethod
     def f(x):
-        return np.log(x/(1-x))
+        return np.log(x/(1-x + 1e-10))
+
 
     @staticmethod
     def finv(x):

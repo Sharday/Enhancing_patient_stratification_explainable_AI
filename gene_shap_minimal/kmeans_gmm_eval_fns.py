@@ -146,15 +146,15 @@ def get_proba(gmm, assignments, X_test):
     for point in X_test:
         probs = get_probs(point, comps, assignments, gmm.weights_)
         new_list.append(probs)
-    pdf_vals = np.asarray(new_list)
+    pdf_vals = np.asarray(new_list) * 100000 # TEMP
 
     # rescale so adds up to 1
     proba = pdf_vals.copy()
-    for i in range(len(proba)):
-        row = proba[i,:]
-        rescaled = sum_to_one(row)
+    # for i in range(len(proba)):
+    #     row = proba[i,:]
+    #     rescaled = sum_to_one(row)
 
-        proba[i,:] = rescaled
+    #     proba[i,:] = rescaled
     
     return proba
 
@@ -183,23 +183,17 @@ def load_gmm(gmm_name):
     
     return loaded_gmm
 
+# Autoencoder
 
-
-def gmm_model_get_prediction_ae(x_test_scaled):
-
-
+def gmm_prediction_ae(x_test_scaled):
     # preprocessing
-    # load full dataset
-    smaller_set = False
-    if len(x_test_scaled) < len(full_ds):
-        smaller_set = True
-        full_dataset = full_ds.copy()
-        split_pt = len(full_dataset) - len(x_test_scaled)
-        full_dataset.iloc[split_pt:,:] = x_test_scaled
-    else:
-        full_dataset = x_test_scaled.copy()
+
+    full_dataset = full_ds.copy()
+    split_pt = len(full_dataset) - len(x_test_scaled)
+    full_dataset.iloc[split_pt:,:] = x_test_scaled
+
         
-    # dim reduction - autoencoder
+    # dim redction - autoencoder
     full_ae_dataset = ae_encode_dataset(full_dataset)
     
     # tsne
@@ -212,10 +206,7 @@ def gmm_model_get_prediction_ae(x_test_scaled):
         method='exact'
     )
     X = tsne.fit_transform(full_ae_dataset)
-    if smaller_set:
-        X_test = X[split_pt:]
-    else:
-        X_test = X
+    X_test = X[split_pt:]
     
     
     filename_assignments = "autoencoder_assignments"
@@ -227,17 +218,28 @@ def gmm_model_get_prediction_ae(x_test_scaled):
         assignments = pickle.load(fp)
     return get_proba(gmm, assignments, X_test)
 
-def gmm_model_get_prediction_pca(x_test_scaled):
-    smaller_set = False
-    if len(x_test_scaled) < len(full_ds):
-        smaller_set = True
-        full_dataset = full_ds.copy()
-        split_pt = len(full_dataset) - len(x_test_scaled)
-        full_dataset.iloc[split_pt:,:] = x_test_scaled
+def gmm_model_get_prediction_ae(x_test_scaled):
+    if len(x_test_scaled) <= len(full_ds):
+        return gmm_prediction_ae(x_test_scaled)
     else:
-        full_dataset = x_test_scaled.copy()
+        full_resp = np.empty((0,3))
+        for i in range(0, len(x_test_scaled), len(full_ds)):
+            end = i + len(full_ds)
+            if end > len(x_test_scaled):
+                end = len(x_test_scaled)
+            next_resp = gmm_prediction_ae(x_test_scaled[i:end])
+            full_resp = np.concatenate([full_resp, next_resp])
+        return full_resp
+
+# PCA
+
+def gmm_prediction_pca(x_test_scaled):
+    # preprocessing
+    full_dataset = full_ds.copy()
+    split_pt = len(full_dataset) - len(x_test_scaled)
+    full_dataset.iloc[split_pt:,:] = x_test_scaled
     
-    # dim redction - PCA
+    # dim reduction - PCA
     full_pca_dataset, _ = encode_pca(full_dataset)
     
     # tsne
@@ -250,11 +252,8 @@ def gmm_model_get_prediction_pca(x_test_scaled):
         method='exact'
     )
     X = tsne.fit_transform(full_pca_dataset)
-    if smaller_set:
-        X_test = X[split_pt:]
-    else:
-        X_test = X
-    
+    X_test = X[split_pt:]
+
     
     filename_assignments = "PCA_assignments"
     load_gmm_name = "gmm_PCA"
@@ -264,4 +263,100 @@ def gmm_model_get_prediction_pca(x_test_scaled):
     with open(filename_assignments, "rb") as fp:   # Unpickling
         assignments = pickle.load(fp)
     return get_proba(gmm, assignments, X_test)
+
+def gmm_model_get_prediction_pca(x_test_scaled):
+    if len(x_test_scaled) <= len(full_ds):
+        return gmm_prediction_pca(x_test_scaled)
+    else:
+        full_resp = np.empty((0,3))
+        for i in range(0, len(x_test_scaled), len(full_ds)):
+            end = i + len(full_ds)
+            if end > len(x_test_scaled):
+                end = len(x_test_scaled)
+            next_resp = gmm_prediction_pca(x_test_scaled[i:end])
+            full_resp = np.concatenate([full_resp, next_resp])
+        return full_resp
+
+# def gmm_model_get_prediction_ae(x_test_scaled):
+
+
+#     # preprocessing
+#     # load full dataset
+#     smaller_set = False
+#     if len(x_test_scaled) < len(full_ds):
+#         smaller_set = True
+#         full_dataset = full_ds.copy()
+#         split_pt = len(full_dataset) - len(x_test_scaled)
+#         full_dataset.iloc[split_pt:,:] = x_test_scaled
+#     else:
+#         full_dataset = x_test_scaled.copy()
+        
+#     # dim reduction - autoencoder
+#     full_ae_dataset = ae_encode_dataset(full_dataset)
+#     print("ae encoded")
+    
+#     # tsne
+#     tsne = manifold.TSNE(
+#         n_components=2,
+#         init="random",
+#         random_state=0,
+#         perplexity=24,
+#         n_iter=750,
+#         method='exact'
+#     )
+#     X = tsne.fit_transform(full_ae_dataset)
+#     if smaller_set:
+#         X_test = X[split_pt:]
+#     else:
+#         X_test = X
+#     print("done tsne")
+    
+    
+#     filename_assignments = "autoencoder_assignments"
+#     load_gmm_name = "gmm_autoencoder"
+#     # load gmm model
+#     gmm = load_gmm(load_gmm_name)
+#     # load assignments
+#     with open(filename_assignments, "rb") as fp:   # Unpickling
+#         assignments = pickle.load(fp)
+#     print("getting proba")
+#     return get_proba(gmm, assignments, X_test)
+
+# def gmm_model_get_prediction_pca(x_test_scaled):
+#     smaller_set = False
+#     if len(x_test_scaled) < len(full_ds):
+#         smaller_set = True
+#         full_dataset = full_ds.copy()
+#         split_pt = len(full_dataset) - len(x_test_scaled)
+#         full_dataset.iloc[split_pt:,:] = x_test_scaled
+#     else:
+#         full_dataset = x_test_scaled.copy()
+    
+#     # dim redction - PCA
+#     full_pca_dataset, _ = encode_pca(full_dataset)
+    
+#     # tsne
+#     tsne = manifold.TSNE(
+#         n_components=2,
+#         init="random",
+#         random_state=0,
+#         perplexity=24,
+#         n_iter=750,
+#         method='exact'
+#     )
+#     X = tsne.fit_transform(full_pca_dataset)
+#     if smaller_set:
+#         X_test = X[split_pt:]
+#     else:
+#         X_test = X
+    
+    
+#     filename_assignments = "PCA_assignments"
+#     load_gmm_name = "gmm_PCA"
+#     # load gmm model
+#     gmm = load_gmm(load_gmm_name)
+#     # load assignments
+#     with open(filename_assignments, "rb") as fp:   # Unpickling
+#         assignments = pickle.load(fp)
+#     return get_proba(gmm, assignments, X_test)
 

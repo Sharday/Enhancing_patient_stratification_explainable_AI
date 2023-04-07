@@ -6,11 +6,11 @@ import numpy as np
 import sys
 # from explainers.test_import import Hello
 
-def get_explainer(model, data, link, num_instances=None, specific_indices=None):
+def get_explainer(model, data, link=None, num_instances=None, specific_indices=None, feature_dependence=True):
     sys.stdout.write("getting explainer")
 
     # explainer = KernelExplainer(lambda x: np.zeros(x.shape[0]), np.ones((2, 4)), nsamples=100)
-    explainer = KernelExplainer(model, data, link, num_instances=num_instances, specific_indices=specific_indices)
+    explainer = KernelExplainer(model, data, link=link, num_instances=num_instances, feature_dependence=feature_dependence, specific_indices=specific_indices)
     # e = explainer.explain(np.ones((1, 4)))
     # assert np.sum(np.abs(e)) < 1e-8
 
