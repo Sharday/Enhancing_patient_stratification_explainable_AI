@@ -70,7 +70,7 @@ disease_labels_test = vec(patient_ids_test)
 
 # GMM model
 # Autoencoder
-explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="identity", feature_dependence=False, specific_indices=[77])
+explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="identity", feature_dependence=True)
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="identity", specific_indices=[18])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit", specific_indices=[41])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit")
@@ -80,7 +80,7 @@ explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_trai
 shap_values = explainer.shap_values(X=x_test_scaled)
 print("final shap values:",shap_values)
 
-with open("shap_values_builtin_gmm_77_iden_mult_ind", "wb") as fp:   #Pickling
+with open("shap_values_gmm_all_iden", "wb") as fp:   #Pickling
     pickle.dump(shap_values, fp)
 
 # with open("shap_values_builtin_gmm_ae_219", "wb") as fp:   #Pickling
