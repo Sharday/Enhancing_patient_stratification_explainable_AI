@@ -26,8 +26,8 @@ import time
 from testp import progressBar
 from kmeans_gmm_eval_fns import gmm_model_get_prediction_ae, gmm_model_get_prediction_pca
 
-x_train_scaled = pd.read_csv('../260_sample_train_scaled.csv').set_index("Patient_ID")
-x_test_scaled = pd.read_csv('../260_sample_test_scaled.csv').set_index("Patient_ID")
+x_train_scaled = pd.read_csv('../data/260_sample_train_scaled.csv').set_index("Patient_ID")
+x_test_scaled = pd.read_csv('../data/260_sample_test_scaled.csv').set_index("Patient_ID")
 
 patient_ids_train = np.array(x_train_scaled.index)
 patient_ids_test = np.array(x_test_scaled.index)
@@ -70,7 +70,8 @@ disease_labels_test = vec(patient_ids_test)
 
 # GMM model
 # Autoencoder
-explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="identity", feature_dependence=True)
+explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit", 
+                                  vis=False, feature_dependence=True)
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="identity", specific_indices=[18])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit", specific_indices=[41])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit")
@@ -80,7 +81,7 @@ explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_trai
 shap_values = explainer.shap_values(X=x_test_scaled)
 print("final shap values:",shap_values)
 
-with open("shap_values_gmm_all_iden", "wb") as fp:   #Pickling
+with open("../data/models/shap/fd_all_1p5", "wb") as fp:   #Pickling
     pickle.dump(shap_values, fp)
 
 # with open("shap_values_builtin_gmm_ae_219", "wb") as fp:   #Pickling

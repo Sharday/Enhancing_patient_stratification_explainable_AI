@@ -23,11 +23,11 @@ import numpy as np
 
 
 num_c = 4
-x_train_scaled = pd.read_csv('../260_sample_train_scaled.csv').set_index("Patient_ID")
+x_train_scaled = pd.read_csv('../data/260_sample_train_scaled.csv').set_index("Patient_ID")
 # x_train_scaled
 
 
-x_test_scaled = pd.read_csv('../260_sample_test_scaled.csv').set_index("Patient_ID")
+x_test_scaled = pd.read_csv('../data/260_sample_test_scaled.csv').set_index("Patient_ID")
 # x_test_scaled
 
 
@@ -53,7 +53,7 @@ def encode_pca(dataset):
     return pca_x_test_ds, pca_x_test
 
 def load_encoder():
-    n_inputs = 219
+    n_inputs = 220
     n_bottleneck = 32
     encoder = Sequential(
                 [
@@ -73,7 +73,7 @@ def load_encoder():
             )
 
     sh = test_set.head(1).shape
-    encoder.load_weights("../encoder_ckpt")
+    encoder.load_weights("../data/models/cd_encoder")
     encoder.build(sh) 
 #     encoder.summary()
     return encoder
@@ -163,13 +163,13 @@ def get_proba(gmm, assignments, X_test):
 
 
 
-def save_gmm(gmm, reduction_type):
-    # save to file
-    gmm_name = 'gmm_' + reduction_type
-    np.save(gmm_name + '_weights', gmm.weights_, allow_pickle=False)
-#     print('Saved ' + gmm_name + '_weights.npy')
-    np.save(gmm_name + '_means', gmm.means_, allow_pickle=False)
-    np.save(gmm_name + '_covariances', gmm.covariances_, allow_pickle=False)
+# def save_gmm(gmm, reduction_type):
+#     # save to file
+#     gmm_name = 'gmm_' + reduction_type
+#     np.save(gmm_name + '_weights', gmm.weights_, allow_pickle=False)
+# #     print('Saved ' + gmm_name + '_weights.npy')
+#     np.save(gmm_name + '_means', gmm.means_, allow_pickle=False)
+#     np.save(gmm_name + '_covariances', gmm.covariances_, allow_pickle=False)
     
 def load_gmm(gmm_name):
     # reload
@@ -183,7 +183,25 @@ def load_gmm(gmm_name):
     
     return loaded_gmm
 
+# def softmax(x): 
+#     return np.exp(x)/sum(np.exp(x))
+
+def get_class_probs(X_test, gmm, assignments, couple):
+    clus_probs = sum_to_one(gmm.predict_proba(X_test))
+    num_classes = 3
+    
+    arr = np.zeros((X_test.shape[0], num_classes))
+    for c in range(num_classes):
+        if assignments[c] == couple:
+            arr[:,c] = np.max(clus_probs[:,couple], axis=1)
+        else:
+            cluster = assignments[c][0]
+            arr[:,c] = clus_probs[:,cluster]
+    arr = sum_to_one(arr)
+    return np.argmax(arr, axis=1), arr
+
 # Autoencoder
+
 
 def gmm_prediction_ae(x_test_scaled):
     # preprocessing
@@ -201,22 +219,26 @@ def gmm_prediction_ae(x_test_scaled):
         n_components=2,
         init="random",
         random_state=0,
-        perplexity=24,
+        perplexity=100,
         n_iter=750,
         method='exact'
     )
     X = tsne.fit_transform(full_ae_dataset)
     X_test = X[split_pt:]
     
-    
-    filename_assignments = "autoencoder_assignments"
-    load_gmm_name = "gmm_autoencoder"
+    path = "../data/models/"
+    filename_assignments = path + "autoencoder_assignments"
+    filename_couple = path + "autoencoder_couple"
+    load_gmm_name = path + "gmm_autoencoder"
     # load gmm model
     gmm = load_gmm(load_gmm_name)
     # load assignments
     with open(filename_assignments, "rb") as fp:   # Unpickling
         assignments = pickle.load(fp)
-    return get_proba(gmm, assignments, X_test)
+    with open(filename_couple, "rb") as fp:   # Unpickling
+        couple = pickle.load(fp)
+    _, probs = get_class_probs(X_test, gmm, assignments, couple)
+    return probs
 
 def gmm_model_get_prediction_ae(x_test_scaled):
     if len(x_test_scaled) <= len(full_ds):
@@ -239,7 +261,7 @@ def gmm_prediction_pca(x_test_scaled):
     split_pt = len(full_dataset) - len(x_test_scaled)
     full_dataset.iloc[split_pt:,:] = x_test_scaled
     
-    # dim reduction - PCA
+    # dim redction - PCA
     full_pca_dataset, _ = encode_pca(full_dataset)
     
     # tsne
@@ -247,22 +269,26 @@ def gmm_prediction_pca(x_test_scaled):
         n_components=2,
         init="random",
         random_state=0,
-        perplexity=24,
+        perplexity=250,
         n_iter=750,
         method='exact'
     )
     X = tsne.fit_transform(full_pca_dataset)
     X_test = X[split_pt:]
 
-    
-    filename_assignments = "PCA_assignments"
-    load_gmm_name = "gmm_PCA"
+    path = "../data/models/"
+    filename_assignments = path + "PCA_assignments"
+    filename_couple = path + "PCA_couple"
+    load_gmm_name = path + "gmm_PCA"
     # load gmm model
     gmm = load_gmm(load_gmm_name)
     # load assignments
     with open(filename_assignments, "rb") as fp:   # Unpickling
         assignments = pickle.load(fp)
-    return get_proba(gmm, assignments, X_test)
+    with open(filename_couple, "rb") as fp:   # Unpickling
+        couple = pickle.load(fp)
+    _, probs = get_class_probs(X_test, gmm, assignments, couple)
+    return probs
 
 def gmm_model_get_prediction_pca(x_test_scaled):
     if len(x_test_scaled) <= len(full_ds):
