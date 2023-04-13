@@ -689,7 +689,7 @@ class Kernel(Explainer):
         # adjust matrix to make it positive definite 
         w, _ = LA.eig(cov_matrix)
         # cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
-        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1.5)*np.identity(n)
+        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + .5)*np.identity(n)
 
         patient_sample = self.get_patient_sample(mod_gene_means, cond_cov_matrix, mod_gene_stds, seed)
 
