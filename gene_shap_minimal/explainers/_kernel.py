@@ -382,8 +382,12 @@ class Kernel(Explainer):
             # pick a reasonable number of samples if the user didn't specify how many they wanted
             self.nsamples = kwargs.get("nsamples", "auto")
             if self.nsamples == "auto":
-                self.nsamples = 2 * self.M + 2**11
-                self.nsamples = 250
+                if self.feature_dependence:
+                    self.nsamples = int(2 * self.M + 2**9) # prev 2**11
+                else:
+                    self.nsamples = int(2 * self.M + 2**9)
+                self.nsamples = 750
+                # self.nsamples = int(2 * self.M + 2**9)
                 print("nsamples:",self.nsamples)
 
             # if we have enough samples to enumerate all subsets then ignore the unneeded samples
@@ -794,16 +798,20 @@ class Kernel(Explainer):
 
     def solve(self, fraction_evaluated, dim):
         eyAdj = self.linkfv(self.ey[:, dim]) - self.link.f(self.fnull[dim])
+        
         s = np.sum(self.maskMatrix, 1)
+        eyAdj[np.isinf(eyAdj)] = 1.
+        eyAdj[np.isinf(-eyAdj)] = -50.
+        print("eyAdj:",eyAdj)
 
         # do feature selection if we have not well enumerated the space
         nonzero_inds = np.arange(self.M)
         log.debug("fraction_evaluated = {0}".format(fraction_evaluated))
-        # if self.l1_reg == "auto":
-        #     warnings.warn(
-        #         "l1_reg=\"auto\" is deprecated and in the next version (v0.29) the behavior will change from a " \
-        #         "conditional use of AIC to simply \"num_features(10)\"!"
-        #     )
+        if self.l1_reg == "auto":
+            warnings.warn(
+                "l1_reg=\"auto\" is deprecated and in the next version (v0.29) the behavior will change from a " \
+                "conditional use of AIC to simply \"num_features(10)\"!"
+            )
         if (self.l1_reg not in ["auto", False, 0]) or (fraction_evaluated < 0.2 and self.l1_reg == "auto"):
             w_aug = np.hstack((self.kernelWeights * (self.M - s), self.kernelWeights * s))
             log.info("np.sum(w_aug) = {0}".format(np.sum(w_aug)))
@@ -812,7 +820,13 @@ class Kernel(Explainer):
             eyAdj_aug = np.hstack((eyAdj, eyAdj - (self.link.f(self.fx[dim]) - self.link.f(self.fnull[dim]))))
             eyAdj_aug *= w_sqrt_aug
             mask_aug = np.transpose(w_sqrt_aug * np.transpose(np.vstack((self.maskMatrix, self.maskMatrix - 1))))
+            eyAdj_aug[np.isinf(eyAdj_aug)] = 8.
+            eyAdj_aug[np.isinf(-eyAdj_aug)] = -8.
+            # mask_aug += np.eye(mask_aug.shape[1]) * 1e-6  # Add small constant to diagonal
+            # np.fill_diagonal(mask_aug, np.ones(mask_aug.shape[1]) * 1e-6)
             #var_norms = np.array([np.linalg.norm(mask_aug[:, i]) for i in range(mask_aug.shape[1])])
+            np.fill_diagonal(mask_aug, np.diag(mask_aug) + np.ones(np.diag(mask_aug).shape)* 1e-6)
+
 
             # select a fixed number of top features
             if isinstance(self.l1_reg, str) and self.l1_reg.startswith("num_features("):
@@ -821,6 +835,7 @@ class Kernel(Explainer):
 
             # use an adaptive regularization method
             elif self.l1_reg == "auto" or self.l1_reg == "bic" or self.l1_reg == "aic":
+                print("adaptive regularisation")
                 c = "aic" if self.l1_reg == "auto" else self.l1_reg
                 try:
                     nonzero_inds = np.nonzero(LassoLarsIC(criterion=c).fit(mask_aug, eyAdj_aug).coef_)[0]
@@ -837,13 +852,16 @@ class Kernel(Explainer):
         if len(nonzero_inds) == 0:
             return np.zeros(self.M), np.ones(self.M)
 
+        print("elim")
         # eliminate one variable with the constraint that all features sum to the output
         eyAdj2 = eyAdj - self.maskMatrix[:, nonzero_inds[-1]] * (
-                    self.link.f(self.fx[dim]) - self.link.f(self.fnull[dim]))
+                    self.link.f(self.fx[dim]) - self.link.f(self.fnull[dim]) + 1e-8) # added constant
+        print("etmp")
         etmp = np.transpose(np.transpose(self.maskMatrix[:, nonzero_inds[:-1]]) - self.maskMatrix[:, nonzero_inds[-1]])
         log.debug("etmp[:4,:] {0}".format(etmp[:4, :]))
 
         # solve a weighted least squares equation to estimate phi
+        print("solve least squares")
         tmp = np.transpose(np.transpose(etmp) * np.transpose(self.kernelWeights))
         etmp_dot = np.dot(np.transpose(tmp), etmp)
         try:
@@ -870,6 +888,7 @@ class Kernel(Explainer):
         phi[nonzero_inds[-1]] = (self.link.f(self.fx[dim]) - self.link.f(self.fnull[dim])) - sum(w)
         log.info("phi = {0}".format(phi))
 
+        print("clean up")
         # clean up any rounding errors
         for i in range(self.M):
             if np.abs(phi[i]) < 1e-10:

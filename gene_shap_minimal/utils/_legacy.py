@@ -228,6 +228,7 @@ class LogitLink(Link):
 
     @staticmethod
     def f(x):
+        print("link.f")
         return np.log(x/(1-x + 1e-10))
 
 
