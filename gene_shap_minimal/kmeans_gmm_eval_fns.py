@@ -403,7 +403,7 @@ def gmm_prediction_ae(x_test_scaled):
     
     split_pt = None if split_pt == 0 else split_pt
     full_ae_dataset = ae_encode_dataset(full_dataset)
-    perplexity = 120
+    perplexity = 130
     gmm, X_train, X_test, X_val = fit_gmm(full_ae_dataset, perplexity, num_c, split_pt=split_pt) # tSNE -> 2D pts
 
     if X_val is None:
@@ -412,7 +412,7 @@ def gmm_prediction_ae(x_test_scaled):
         X = np.concatenate([X_train, X_val, X_test])
         
     X_test = X[split_pt:]
-    
+
     test_set_clusters, probs = final_gmm_model_get_clusters(gmm, X_train, X_test,train_disease_labels)
     return probs
 

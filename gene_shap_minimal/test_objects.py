@@ -86,7 +86,7 @@ disease_labels_test = vec(patient_ids_test)
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit", 
 #                                   vis=False, feature_dependence=True)
 explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit", 
-                                  vis=False, feature_dependence=False)
+                                  vis=False, feature_dependence=True, specific_indices=[41])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="identity", specific_indices=[18])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit", specific_indices=[41])
 # explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_train_scaled, link="logit")
@@ -96,7 +96,7 @@ explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_trai
 shap_values = explainer.shap_values(X=x_test_scaled)
 print("final shap values:",shap_values)
 
-with open("../data/models/shap/new_ind_all_750", "wb") as fp:   #Pickling
+with open("../data/models/shap/new_fd_41_1samp", "wb") as fp:   #Pickling
     pickle.dump(shap_values, fp)
 
 # with open("shap_values_builtin_gmm_ae_219", "wb") as fp:   #Pickling

@@ -386,7 +386,7 @@ class Kernel(Explainer):
                     self.nsamples = int(2 * self.M + 2**9) # prev 2**11
                 else:
                     self.nsamples = int(2 * self.M + 2**9)
-                self.nsamples = 750
+                self.nsamples = 400
                 # self.nsamples = int(2 * self.M + 2**9)
                 print("nsamples:",self.nsamples)
 
@@ -741,10 +741,14 @@ class Kernel(Explainer):
                 for group in groups:
                     self.synth_data[offset:offset+self.N, group] = x[0, group]
             elif self.feature_dependence:
-                synth_samples = self.get_samples(x, groups, self.N)
+                # print(self.N)
+                synth_samples = self.get_samples(x, groups, 1) # was self.N
+                # print(synth_samples.shape)
+                # print(synth_samples)
                 # print("changing",self.synth_data[offset:offset+self.N].shape)
                 # print(self.synth_data[offset:offset+self.N])
                 self.synth_data[offset:offset+self.N] = synth_samples
+                # print(self.synth_data[offset:offset+self.N])
                 # print("becoming")
                 # print(synth_samples)
                 # print("synth:",self.synth_data)
@@ -753,6 +757,8 @@ class Kernel(Explainer):
                 # further performance optimization in case each group has a single feature
                 # if feature dependence, get cond patient sample, update self.synth_data[offset:offset+self.N]
                 evaluation_data = x[0, groups]
+                # print("x:",x.shape)
+                # print("eval:",evaluation_data.shape)
                 # In edge case where background is all dense but evaluation data
                 # is all sparse, make evaluation data dense
                 if sp.sparse.issparse(x) and not sp.sparse.issparse(self.synth_data):
