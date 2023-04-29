@@ -99,7 +99,10 @@ class Kernel(Explainer):
                         "summarize the background as K samples.")
 
         # init our parameters
-        self.N = self.data.data.shape[0]
+        if self.feature_dependence:
+            self.N = 1
+        else:
+            self.N = self.data.data.shape[0]
         self.P = self.data.data.shape[1]
         self.linkfv = np.vectorize(self.link.f)
         self.nsamplesAdded = 0
@@ -383,10 +386,10 @@ class Kernel(Explainer):
             self.nsamples = kwargs.get("nsamples", "auto")
             if self.nsamples == "auto":
                 if self.feature_dependence:
-                    self.nsamples = int(2 * self.M + 2**9) # prev 2**11
+                    self.nsamples = int(2 * self.M + 2**11) # prev 2**11
                 else:
-                    self.nsamples = int(2 * self.M + 2**9)
-                self.nsamples = 400
+                    self.nsamples = int(2 * self.M + 2**11)
+                # self.nsamples = 400
                 # self.nsamples = int(2 * self.M + 2**9)
                 print("nsamples:",self.nsamples)
 
