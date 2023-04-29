@@ -385,12 +385,13 @@ class Kernel(Explainer):
             # pick a reasonable number of samples if the user didn't specify how many they wanted
             self.nsamples = kwargs.get("nsamples", "auto")
             if self.nsamples == "auto":
-                if self.feature_dependence:
-                    self.nsamples = int(2 * self.M + 2**11) # prev 2**11
-                else:
-                    self.nsamples = int(2 * self.M + 2**11)
+                # if self.feature_dependence:
+                #     self.nsamples = int(2 * self.M + 2**11) # prev 2**11
+                # else:
+                #     self.nsamples = int(2 * self.M + 2**11)
                 # self.nsamples = 400
                 # self.nsamples = int(2 * self.M + 2**9)
+                self.nsamples = int(2 * self.M + 2**11)
                 print("nsamples:",self.nsamples)
 
             # if we have enough samples to enumerate all subsets then ignore the unneeded samples
@@ -696,7 +697,7 @@ class Kernel(Explainer):
         # adjust matrix to make it positive definite 
         w, _ = LA.eig(cov_matrix)
         # cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
-        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + .5)*np.identity(n)
+        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 2.)*np.identity(n)
 
         patient_sample = self.get_patient_sample(mod_gene_means, cond_cov_matrix, mod_gene_stds, seed)
 

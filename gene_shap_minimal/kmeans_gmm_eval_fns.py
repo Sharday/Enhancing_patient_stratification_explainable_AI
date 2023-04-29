@@ -55,7 +55,7 @@ def encode_pca(dataset):
     return pca_x_test_ds, pca_x_test
 
 def load_encoder():
-    n_inputs = 220
+    n_inputs = 221
     n_bottleneck = 32
     encoder = Sequential(
                 [
@@ -75,7 +75,7 @@ def load_encoder():
             )
 
     sh = test_set.head(1).shape
-    encoder.load_weights("../data/models/cd_encoder")
+    encoder.load_weights("../data/models/cd_encoder_221")
     encoder.build(sh) 
 #     encoder.summary()
     return encoder
