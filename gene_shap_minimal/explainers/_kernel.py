@@ -697,7 +697,7 @@ class Kernel(Explainer):
         # adjust matrix to make it positive definite 
         w, _ = LA.eig(cov_matrix)
         # cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
-        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 2.)*np.identity(n)
+        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 2.5)*np.identity(n)
 
         patient_sample = self.get_patient_sample(mod_gene_means, cond_cov_matrix, mod_gene_stds, seed)
 
@@ -746,12 +746,13 @@ class Kernel(Explainer):
                     self.synth_data[offset:offset+self.N, group] = x[0, group]
             elif self.feature_dependence:
                 # print(self.N)
-                synth_samples = self.get_samples(x, groups, 1) # was self.N
+                synth_samples = self.get_samples(x, groups, 10) # was self.N
+                synth_samples = np.mean(synth_samples, axis=0).reshape(1,-1)
                 # print(synth_samples.shape)
                 # print(synth_samples)
                 # print("changing",self.synth_data[offset:offset+self.N].shape)
                 # print(self.synth_data[offset:offset+self.N])
-                self.synth_data[offset:offset+self.N] = synth_samples
+                self.synth_data[offset:offset+self.N] = synth_samples # (1, 221)
                 # print(self.synth_data[offset:offset+self.N])
                 # print("becoming")
                 # print(synth_samples)
