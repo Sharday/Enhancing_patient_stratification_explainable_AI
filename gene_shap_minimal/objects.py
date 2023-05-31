@@ -7,7 +7,7 @@ import sys
 # from explainers.test_import import Hello
 
 def get_explainer(model, data, vis=False, link=None, num_instances=None, specific_indices=None, feature_dependence=True):
-    sys.stdout.write("getting explainer")
+    # sys.stdout.write("getting explainer")
 
     # explainer = KernelExplainer(lambda x: np.zeros(x.shape[0]), np.ones((2, 4)), nsamples=100)
     explainer = KernelExplainer(model, data, vis=vis, link=link, num_instances=num_instances, feature_dependence=feature_dependence, specific_indices=specific_indices)
@@ -17,7 +17,7 @@ def get_explainer(model, data, vis=False, link=None, num_instances=None, specifi
     return explainer
 
 def get_explanation(values, base_values, data, feature_names):
-    print("getting explanation")
+    # print("getting explanation")
     return Explanation(values=values, base_values=base_values, data=data, feature_names=feature_names)
 
 def get_clustering(ds, labels):
