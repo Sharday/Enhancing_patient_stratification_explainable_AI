@@ -11,9 +11,9 @@ Main files created from scratch:
 * gene_shap_minimal/6_class_contrastive_GMM_gene_modules.ipynb - class-contrastive technique for cluster explainability based on identified gene modules
 * gene_shap_minimal/6_class_contrastive_GMM_volcano_plot.ipynb - class-contrastive technique for cluster explainability based on gene sets extracted from volcano plot
 
-This code builds upon the SHAP functionality. The original SHAP implementation can be found at https://github.com/slundberg/shap. A minimal version is provided using the .py files in gene_shap_minimal. 
+This code builds upon the SHAP functionality. The original SHAP implementation can be found at https://github.com/slundberg/shap. A minimal version is provided using the .py files in gene_shap_minimal.\ 
 This file was modified to incorporate feature dependence into the method:
-* gene_shap_minimal/explainers/_kernel.py
+* gene_shap_minimal/explainers/_kernel.py\
 The following files were created from scratch for facilitation:
 * gene_shap_minimal/kmeans_gmm_eval_fns.py - includes functions to get GMM predictions
 * gene_shap_minimal/objects.py - functions to return required objects
