@@ -1,3 +1,0 @@
-# transcriptomics
-
-sharday project

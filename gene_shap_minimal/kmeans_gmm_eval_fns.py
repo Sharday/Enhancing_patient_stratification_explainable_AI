@@ -26,16 +26,13 @@ os.environ["OMP_NUM_THREADS"] = '1'
 
 num_c = 4
 x_train_scaled = pd.read_csv('../data/260_sample_train_scaled.csv').set_index("Patient_ID")
-# x_train_scaled
 
 
 x_test_scaled = pd.read_csv('../data/260_sample_test_scaled.csv').set_index("Patient_ID")
-# x_test_scaled
 
 
 
 full_ds = pd.concat([x_train_scaled, x_test_scaled])
-# full_ds
 
 
 
@@ -60,7 +57,6 @@ def load_encoder():
     encoder = Sequential(
                 [
 
-    #                 Input(shape=(n_inputs,)),
                     # encoder level 1
                     Dense(n_inputs*2),
                     BatchNormalization(),
@@ -77,7 +73,6 @@ def load_encoder():
     sh = test_set.head(1).shape
     encoder.load_weights("../data/models/cd_encoder_221")
     encoder.build(sh) 
-#     encoder.summary()
     return encoder
 
 
@@ -119,16 +114,13 @@ def get_probs(point, comps, assignments, w):
         p_cand = []
         for cluster in elem:
             p = comps[cluster].pdf(point) * w[cluster]
-#             print("p:",p)
             p_cand.append(p)
-#         print(p_cand)
         p = max(p_cand)
         probs.append(p)
         
     return probs
 
 def sum_to_one(vals): 
-#     print(t, u)
     return vals / vals.sum()
 
 
@@ -138,9 +130,6 @@ def sum_to_one(vals):
 def get_proba(gmm, assignments, X_test):
     # GMM mixture component distributions
     mu, covar, w = gmm.means_, gmm.covariances_, gmm.weights_
-    # print("means:",mu)
-    # print("covariances_:",covar)
-    # print("weights_:",w)
     comps = [multivariate_normal(mu[i], covar[i]) for i in range(num_c)]
 
     X_test = X_test.tolist()
@@ -152,11 +141,7 @@ def get_proba(gmm, assignments, X_test):
 
     # rescale so adds up to 1
     proba = pdf_vals.copy()
-    # for i in range(len(proba)):
-    #     row = proba[i,:]
-    #     rescaled = sum_to_one(row)
 
-    #     proba[i,:] = rescaled
     
     return proba
 
@@ -175,7 +160,6 @@ def pair_repeat(dup, cls_assignments, num_c, amounts):
     return cls_assignments
 
 def handle_duplicates(cls_assignments, dup, c, num_c, amounts):
-#     print("c:",c)
     if len(c) != 1:
         
         cls_assignments = pair_repeat(dup, cls_assignments, num_c, amounts)
@@ -183,12 +167,10 @@ def handle_duplicates(cls_assignments, dup, c, num_c, amounts):
         # reassign class least associated to next most associated cluster
         given_cluster = dup[0]
         cls_least = np.argmin(amounts[:,given_cluster])
-#         print(cls_least)
         class_amounts = amounts[cls_least,:]
         class_amounts[given_cluster] = -1
         next_cluster = np.argmax(class_amounts)
         cls_assignments[cls_least] = next_cluster
-#         print("intermediate assignments",cls_assignments)
         
         # handle other duplicate pair
         u, c = np.unique(cls_assignments, return_counts=True)
@@ -200,14 +182,6 @@ def handle_duplicates(cls_assignments, dup, c, num_c, amounts):
 
 
 
-# def save_gmm(gmm, reduction_type):
-#     # save to file
-#     gmm_name = 'gmm_' + reduction_type
-#     np.save(gmm_name + '_weights', gmm.weights_, allow_pickle=False)
-# #     print('Saved ' + gmm_name + '_weights.npy')
-#     np.save(gmm_name + '_means', gmm.means_, allow_pickle=False)
-#     np.save(gmm_name + '_covariances', gmm.covariances_, allow_pickle=False)
-    
 def load_gmm(gmm_name):
     # reload
     means = np.load(gmm_name + '_means.npy')
@@ -220,8 +194,7 @@ def load_gmm(gmm_name):
     
     return loaded_gmm
 
-# def softmax(x): 
-#     return np.exp(x)/sum(np.exp(x))
+
 
 def get_class_probs(X_test, gmm, assignments, couple):
     clus_probs = sum_to_one(gmm.predict_proba(X_test))
@@ -240,45 +213,9 @@ def get_class_probs(X_test, gmm, assignments, couple):
 # Autoencoder
 
 
-# def gmm_prediction_ae(x_test_scaled):
-#     # preprocessing
 
-#     full_dataset = full_ds.copy()
-#     split_pt = len(full_dataset) - len(x_test_scaled)
-#     full_dataset.iloc[split_pt:,:] = x_test_scaled
-
-        
-#     # dim redction - autoencoder
-#     full_ae_dataset = ae_encode_dataset(full_dataset)
-    
-#     # tsne
-#     tsne = manifold.TSNE(
-#         n_components=2,
-#         init="random",
-#         random_state=0,
-#         perplexity=100,
-#         n_iter=750,
-#         method='exact'
-#     )
-#     X = tsne.fit_transform(full_ae_dataset)
-#     X_test = X[split_pt:]
-    
-#     path = "../data/models/"
-#     filename_assignments = path + "autoencoder_assignments"
-#     filename_couple = path + "autoencoder_couple"
-#     load_gmm_name = path + "gmm_autoencoder"
-#     # load gmm model
-#     gmm = load_gmm(load_gmm_name)
-#     # load assignments
-#     with open(filename_assignments, "rb") as fp:   # Unpickling
-#         assignments = pickle.load(fp)
-#     with open(filename_couple, "rb") as fp:   # Unpickling
-#         couple = pickle.load(fp)
-#     _, probs = get_class_probs(X_test, gmm, assignments, couple)
-#     return probs
 
 def fit_gmm(full_dataset, perplexity, num_c, split_pt=None):
-    # print("full_dataset:",full_dataset)
     gmm = mixture.GaussianMixture(n_components=num_c,covariance_type='full', random_state=42)
     tsne = manifold.TSNE(
         n_components=2,
@@ -289,7 +226,6 @@ def fit_gmm(full_dataset, perplexity, num_c, split_pt=None):
         method='exact'
     )
     X = tsne.fit_transform(full_dataset)
-    # print("split:",split_pt)
 
     
     if split_pt is None:
@@ -308,9 +244,7 @@ def fit_gmm(full_dataset, perplexity, num_c, split_pt=None):
 
 def get_amount_matrix_gmm(gmm, X_train, train_disease_labels):
     mu, covar, w = gmm.means_, gmm.covariances_, gmm.weights_
-    # print("means:",mu)
-    # print("covariances_:",covar)
-    # print("weights_:",w)
+
     
     comps = [multivariate_normal(mu[i], covar[i]) for i in range(num_c)]
     
@@ -325,7 +259,6 @@ def get_amount_matrix_gmm(gmm, X_train, train_disease_labels):
             pts = X_train[train_disease_labels==c]
             curr_sum = np.sum(comp.pdf(pts)) * weight
             amounts[c][i] = curr_sum
-    # print(amounts)
     #                cluster 0, cluster 1, cluster 2, cluster 3
     # control 
     # CD no ulcer
@@ -338,12 +271,10 @@ def process_clusters(amounts, X_train, num_c):
 
     
     cls_assignments = np.argmax(amounts, axis=1) # assigned to class 0, 1, 2
-#     print("initial cls assignments:",cls_assignments)
     
     # check for and handle duplicates
     u, c = np.unique(cls_assignments, return_counts=True)
     dup = u[c > 1]
-#     print("dup:",dup[0])
     if len(dup) > 0:
         cls_assignments = handle_duplicates(cls_assignments, dup, c, num_c, amounts)
         
@@ -372,8 +303,6 @@ def process_clusters(amounts, X_train, num_c):
     couple = assignments[rem_cls_assignment]
     # clusters assigned to disease class 0, 1, 2 (control, CD_no_ulcer, CD_deep_ulcer)
     
-#     print(assignments)
-#     print(couple)
     return assignments, couple
 
 def final_gmm_model_get_clusters(gmm, X_train, X_test, train_disease_labels):
@@ -381,12 +310,9 @@ def final_gmm_model_get_clusters(gmm, X_train, X_test, train_disease_labels):
     amounts = get_amount_matrix_gmm(gmm, X_train, train_disease_labels)
     assignments, couple = process_clusters(amounts, X_train, num_c)
     # retrieve clusters
-#     gmm_labels = gmm.predict(X_test)
-#     test_set_clusters = get_final_clusters(assignments, couple, gmm_labels)
+
     test_set_clusters, probs = get_class_probs(X_test, gmm, assignments, couple)
-#     print(test_set_clusters)
-#     print(probs)
-    
+
     return test_set_clusters, probs
 
 def gmm_prediction_ae(x_test_scaled):
@@ -439,7 +365,7 @@ def gmm_prediction_pca(x_test_scaled):
     split_pt = len(full_dataset) - len(x_test_scaled)
     full_dataset.iloc[split_pt:,:] = x_test_scaled
     
-    # dim redction - PCA
+    # dim reduction - PCA
     full_pca_dataset, _ = encode_pca(full_dataset)
     
     # tsne
@@ -481,100 +407,3 @@ def gmm_model_get_prediction_pca(x_test_scaled):
             full_resp = np.concatenate([full_resp, next_resp])
         return full_resp
 
-# def gmm_model_get_prediction_ae(x_test_scaled):
-
-
-#     # preprocessing
-#     # load full dataset
-#     smaller_set = False
-#     if len(x_test_scaled) < len(full_ds):
-#         smaller_set = True
-#         full_dataset = full_ds.copy()
-#         split_pt = len(full_dataset) - len(x_test_scaled)
-#         full_dataset.iloc[split_pt:,:] = x_test_scaled
-#     else:
-#         full_dataset = x_test_scaled.copy()
-        
-#     # dim reduction - autoencoder
-#     full_ae_dataset = ae_encode_dataset(full_dataset)
-#     print("ae encoded")
-    
-#     # tsne
-#     tsne = manifold.TSNE(
-#         n_components=2,
-#         init="random",
-#         random_state=0,
-#         perplexity=24,
-#         n_iter=750,
-#         method='exact'
-#     )
-#     X = tsne.fit_transform(full_ae_dataset)
-#     if smaller_set:
-#         X_test = X[split_pt:]
-#     else:
-#         X_test = X
-#     print("done tsne")
-    
-    
-#     filename_assignments = "autoencoder_assignments"
-#     load_gmm_name = "gmm_autoencoder"
-#     # load gmm model
-#     gmm = load_gmm(load_gmm_name)
-#     # load assignments
-#     with open(filename_assignments, "rb") as fp:   # Unpickling
-#         assignments = pickle.load(fp)
-#     print("getting proba")
-#     return get_proba(gmm, assignments, X_test)
-
-# def gmm_model_get_prediction_pca(x_test_scaled):
-#     smaller_set = False
-#     if len(x_test_scaled) < len(full_ds):
-#         smaller_set = True
-#         full_dataset = full_ds.copy()
-#         split_pt = len(full_dataset) - len(x_test_scaled)
-#         full_dataset.iloc[split_pt:,:] = x_test_scaled
-#     else:
-#         full_dataset = x_test_scaled.copy()
-    
-#     # dim redction - PCA
-#     full_pca_dataset, _ = encode_pca(full_dataset)
-    
-#     # tsne
-#     tsne = manifold.TSNE(
-#         n_components=2,
-#         init="random",
-#         random_state=0,
-#         perplexity=24,
-#         n_iter=750,
-#         method='exact'
-#     )
-#     X = tsne.fit_transform(full_pca_dataset)
-#     if smaller_set:
-#         X_test = X[split_pt:]
-#     else:
-#         X_test = X
-    
-    
-#     filename_assignments = "PCA_assignments"
-#     load_gmm_name = "gmm_PCA"
-#     # load gmm model
-#     gmm = load_gmm(load_gmm_name)
-#     # load assignments
-#     with open(filename_assignments, "rb") as fp:   # Unpickling
-#         assignments = pickle.load(fp)
-#     return get_proba(gmm, assignments, X_test)
-
-
-
-# def final_gmm_model_get_clusters(gmm, X_train, X_test, train_disease_labels):
-#     # process
-#     amounts = get_amount_matrix_gmm(gmm, X_train, train_disease_labels)
-#     assignments, couple = process_clusters(amounts, X_train, num_c)
-#     # retrieve clusters
-# #     gmm_labels = gmm.predict(X_test)
-# #     test_set_clusters = get_final_clusters(assignments, couple, gmm_labels)
-#     test_set_clusters, probs = get_class_probs(X_test, gmm, assignments, couple)
-# #     print(test_set_clusters)
-# #     print(probs)
-    
-#     return test_set_clusters, probs

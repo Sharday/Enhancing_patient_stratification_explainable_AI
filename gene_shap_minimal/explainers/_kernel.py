@@ -69,9 +69,7 @@ class Kernel(Explainer):
     """
 
     def __init__(self, model, data, link=IdentityLink(), num_instances=None, specific_indices=None, feature_dependence=True, vis=False, **kwargs):
-        print("initialising explainer")
-        # with open('exp_init.txt', 'w') as f:
-        #     f.write('initialising explainer')
+
         self.num_instances = num_instances
         self.specific_indices = specific_indices
         self.visualise = vis
@@ -83,7 +81,6 @@ class Kernel(Explainer):
         self.model = convert_to_model(model)
         self.keep_index = kwargs.get("keep_index", False)
         self.keep_index_ordered = kwargs.get("keep_index_ordered", False)
-        # print("data before converting:",data)
         self.data = convert_to_data(data, keep_index=self.keep_index)
         model_null = match_model_to_data(self.model, self.data)
 
@@ -138,69 +135,6 @@ class Kernel(Explainer):
         # Build covariance matrix using data
         cov_matrix = np.cov(df.T)
 
-        # n = df.shape[1]
-
-        # cov = np.zeros((n,n))
-        
-        # calculate correlations using KL divergence
-
-        # https://jamesmccaffrey.wordpress.com/2021/02/03/the-kullback-leibler-divergence-for-two-gaussian-distributions/
-        # def kld_gauss(u1, s1, u2, s2):
-        #     # general KL two Gaussians
-        #     # u2, s2 often N(0,1)
-        #     # https://stats.stackexchange.com/questions/7440/ +
-        #     # kl-divergence-between-two-univariate-gaussians
-        #     # log(s2/s1) + [( s1^2 + (u1-u2)^2 ) / 2*s2^2] - 0.5
-        #     v1 = s1 * s1
-        #     v2 = s2 * s2
-        #     if s1 == 0:
-        #         s1 = 0.005
-        #     a = np.log(s2/s1) 
-        #     num = v1 + (u1 - u2)**2
-        #     den = 2 * v2
-        #     if den == 0:
-        #         den = 0.005
-        #     b = num / den
-        #     return a + b - 0.5
-
-        # def build_cov_matrix_corr(gene_means, gene_stds):
-        #     min_v = inf
-        #     max_v = -inf
-        #     for i in range(n):
-        #         curr_mean = gene_means[i]
-        #         curr_std = gene_stds[i]
-
-        #         for j in range(i+1, n):
-        #             other_mean = gene_means[j]
-        #             other_std = gene_stds[j]
-        #             kl = kld_gauss(curr_mean, curr_std, other_mean, other_std)
-        #             cov[i][j] = kl
-
-        #             #max/min
-        #             min_v = min(min_v, kl)
-        #             max_v = max(max_v, kl)
-        #     return cov, min_v, max_v
-
-        # cov, min_v, max_v = build_cov_matrix_corr(self.gene_means, self.gene_stds)
-
-        # nans = np.isnan(cov)
-        # assert np.all(nans == False)
-        # max_val = 3000
-        # cov[cov == -inf] = -max_val #?
-        # cov[cov == inf] = max_val
-
-        # # scale down correlations
-        # standard_scaler = MinMaxScaler((0,.1))
-        # cov_matrix = standard_scaler.fit_transform(cov)
-
-        # cov_matrix = .1 - cov_matrix
-
-        # # reflection to lower triangle
-        # # https://stackoverflow.com/questions/16444930/copy-upper-triangle-to-lower-triangle-in-a-python-matrix
-        # i_lower = np.tril_indices(n, -1)
-        # cov_matrix[i_lower] = cov_matrix.T[i_lower]  # make the matrix symmetric
-
-        # assign variances along diagonal
         np.fill_diagonal(cov_matrix, self.gene_vars)
 
         return cov_matrix
@@ -291,14 +225,12 @@ class Kernel(Explainer):
                         data = convert_to_instance_with_index(data, column_name, index_value[i:i + 1], index_name)
                     print("Explaining instance",i,"...")
                     inst_explanation = self.explain(data, **kwargs)
-                    print("explanation:",inst_explanation)
                     explanations.append(inst_explanation)
                     print("INSTANCE",i,"COMPLETE")
                     if kwargs.get("gc_collect", False):
                         gc.collect()
 
                 s = explanations[0].shape
-                print("explanation[0] shape:",s)
                 outs = [np.zeros((len(self.specific_indices), s[0])) for j in range(s[1])]
                 for i in range(len(self.specific_indices)):
                     for j in range(s[1]):
@@ -385,12 +317,6 @@ class Kernel(Explainer):
             # pick a reasonable number of samples if the user didn't specify how many they wanted
             self.nsamples = kwargs.get("nsamples", "auto")
             if self.nsamples == "auto":
-                # if self.feature_dependence:
-                #     self.nsamples = int(2 * self.M + 2**11) # prev 2**11
-                # else:
-                #     self.nsamples = int(2 * self.M + 2**11)
-                # self.nsamples = 400
-                # self.nsamples = int(2 * self.M + 2**9)
                 self.nsamples = int(2 * self.M + 2**11)
                 print("nsamples:",self.nsamples)
 
@@ -404,11 +330,8 @@ class Kernel(Explainer):
             # reserve space for some of our computations
             self.allocate()
 
-            print("initial synthetic data:",self.synth_data)
-            print("shape:",len(self.synth_data))
-            print(len(self.synth_data[0]))
 
-            # self.run() ##### TEMP
+
 
             # weight the different subset sizes
             num_subset_sizes = np.int(np.ceil((self.M - 1) / 2.0))
@@ -487,7 +410,6 @@ class Kernel(Explainer):
                 itrs = min((len(ind_set) - ind_set_pos), samples_left)
                 with tqdm(total=itrs) as pbar:
                     while samples_left > 0 and ind_set_pos < len(ind_set):
-                        # print("samples left:",samples_left)
                         mask.fill(0.0)
                         ind = ind_set[ind_set_pos] # we call np.random.choice once to save time and then just read it here
                         ind_set_pos += 1
@@ -528,9 +450,7 @@ class Kernel(Explainer):
                 self.kernelWeights[nfixed_samples:] *= weight_left / self.kernelWeights[nfixed_samples:].sum()
 
             # execute the model on the synthetic samples we have created
-            print("synthetic samples generated:",self.synth_data)
-            print("shape:",len(self.synth_data))
-            print(len(self.synth_data[0]))
+
             
             self.run()
 
@@ -609,7 +529,6 @@ class Kernel(Explainer):
             if nnz == 0:
                 self.synth_data = sp.sparse.csr_matrix(shape, dtype=self.data.data.dtype).tolil()
             else:
-                # print("this stuff")
                 data = self.data.data.data
                 indices = self.data.data.indices
                 indptr = self.data.data.indptr
@@ -624,7 +543,6 @@ class Kernel(Explainer):
                 new_indices = np.tile(indices, self.nsamples)
                 self.synth_data = sp.sparse.csr_matrix((new_data, new_indices, new_indptr), shape=shape).tolil()
         else:
-            print("not sparse")
             self.synth_data = np.tile(self.data.data, (self.nsamples, 1))
 
         self.maskMatrix = np.zeros((self.nsamples, self.M))
@@ -635,7 +553,6 @@ class Kernel(Explainer):
         self.nsamplesAdded = 0
         self.nsamplesRun = 0
         
-        # print(self.data.data)
         
         if self.keep_index:
             self.synth_data_index = np.tile(self.data.index_value, self.nsamples)
@@ -653,24 +570,20 @@ class Kernel(Explainer):
         test_sample[groups] = cond_gene_vals
 
         fig, ax = plt.subplots(1, 1)
-        # ax.hist(gene_means, density=True, bins='auto', histtype='stepfilled', alpha=0.2, label='means')
         ax.hist(test_sample, density=True, bins='auto', histtype='stepfilled', alpha=0.2, label='without_corr')
         ax.hist(patient_sample, density=True, bins='auto', histtype='stepfilled', alpha=0.2, label="with_corr")
-        # ax.hist(rescaled_sample, density=True, bins='auto', histtype='stepfilled', alpha=0.2, label='with_corr_rescaled')
         ax.set_title("The effect of the use of correlations on sample distributions")
         ax.set_xlabel("Expression level (scaled)")
-        ax.set_ylabel("Probability density?")
+        ax.set_ylabel("Probability density")
 
 
-        # ax.hist(rescale, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
-        # ax.set_xlim(-20, 20)
         ax.legend(loc='best', frameon=False)
         plt.show()
 
     def get_patient_sample(self, means, cov_matrix, gene_stds, seed, allow_singular=False):
         rv = multivariate_normal(means, cov_matrix, allow_singular=allow_singular)
         sample = rv.rvs(size=1, random_state=seed) # sample gene expression for a dummy patient
-        # account for rescaled variances when making cov matrix positive semidefinite
+        # account for rescaled variances when making cov matrix positive definite
         rescaled_sample = (sample - means) * gene_stds + means
         return np.clip(rescaled_sample, 0, 1)
 
@@ -696,8 +609,7 @@ class Kernel(Explainer):
 
         # adjust matrix to make it positive definite 
         w, _ = LA.eig(cov_matrix)
-        # cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1e-7)*np.identity(n)
-        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 2.5)*np.identity(n)
+        cond_cov_matrix = cov_matrix + (abs(np.min(w)) + 1.5)*np.identity(n)
 
         patient_sample = self.get_patient_sample(mod_gene_means, cond_cov_matrix, mod_gene_stds, seed)
 
@@ -710,76 +622,46 @@ class Kernel(Explainer):
         return patient_sample
 
     def get_samples(self, x, groups, num_samples):
-        # samples = []
-        # for i in range(num_samples):
-        #     sample = self.generate_sample(self, x, groups)
-        #     samples.append(sample)
-        # A List of Items
-        # items = list(range(0, num_samples))
 
-        # # A Nicer, Single-Call Usage
-        # for item in progressBar(items, prefix = 'Progress:', suffix = 'Complete', length = 50):
-        #     # Do stuff...
-        #     time.sleep(0.1)
-        # samples = [self.generate_sample(x, groups, i) for i in progressBar(items, prefix = 'Progress:', suffix = 'Complete', length = 50)]
         samples = [self.generate_sample(x, groups, i) for i in range(num_samples)]
         samples = np.array(samples)
         return samples
 
     def addsample(self, x, m, w):
-        # print("base_cov_matrix:",self.base_cov_matrix)
-        # print("instance:",x)
+
         offset = self.nsamplesAdded * self.N
         if isinstance(self.varyingFeatureGroups, (list,)):
-            print("VARYING:",self.varyingFeatureGroups)
             for j in range(self.M):
                 for k in self.varyingFeatureGroups[j]:
                     if m[j] == 1.0:
                         self.synth_data[offset:offset+self.N, k] = x[0, k]
         else: # this
             # for non-jagged numpy array we can significantly boost performance
-            # print("non-jagged :",self.varyingFeatureGroups)
             mask = m == 1.0
             groups = self.varyingFeatureGroups[mask]
             if len(groups.shape) == 2:
                 for group in groups:
                     self.synth_data[offset:offset+self.N, group] = x[0, group]
             elif self.feature_dependence:
-                # print(self.N)
                 synth_samples = self.get_samples(x, groups, 10) # was self.N
                 synth_samples = np.mean(synth_samples, axis=0).reshape(1,-1)
-                # print(synth_samples.shape)
-                # print(synth_samples)
-                # print("changing",self.synth_data[offset:offset+self.N].shape)
-                # print(self.synth_data[offset:offset+self.N])
                 self.synth_data[offset:offset+self.N] = synth_samples # (1, 221)
-                # print(self.synth_data[offset:offset+self.N])
-                # print("becoming")
-                # print(synth_samples)
-                # print("synth:",self.synth_data)
-                # sys.exit(0)
-            else: # this
+            else: 
                 # further performance optimization in case each group has a single feature
                 # if feature dependence, get cond patient sample, update self.synth_data[offset:offset+self.N]
                 evaluation_data = x[0, groups]
-                # print("x:",x.shape)
-                # print("eval:",evaluation_data.shape)
+
                 # In edge case where background is all dense but evaluation data
                 # is all sparse, make evaluation data dense
                 if sp.sparse.issparse(x) and not sp.sparse.issparse(self.synth_data):
                     evaluation_data = evaluation_data.toarray()
-                # print("evaluation_data",evaluation_data.shape)
-                # print("evaluation_data",evaluation_data)
-                # print("changing",self.synth_data[offset:offset+self.N, groups].shape)
+
                 self.synth_data[offset:offset+self.N, groups] = evaluation_data
-                # sys.exit(0)
         self.maskMatrix[self.nsamplesAdded, :] = m
         self.kernelWeights[self.nsamplesAdded] = w
         self.nsamplesAdded += 1
-        # print("nsamplesAdded:",self.nsamplesAdded)
 
     def run(self):
-        # self.nsamplesAdded = 78*5 ##### TEMP
         num_to_run = self.nsamplesAdded * self.N - self.nsamplesRun * self.N
         data = self.synth_data[self.nsamplesRun*self.N:self.nsamplesAdded*self.N,:]
         if self.keep_index:
@@ -789,17 +671,13 @@ class Kernel(Explainer):
             data = pd.concat([index, data], axis=1).set_index(self.data.index_name)
             if self.keep_index_ordered:
                 data = data.sort_index()
-        print("finding modelout of chunk")
         modelOut = self.model.f(data)
-        print("found modelout of chunk")
         if isinstance(modelOut, (pd.DataFrame, pd.Series)):
             modelOut = modelOut.values
-        print("modelout shape:",modelOut.shape)
         self.y[self.nsamplesRun * self.N:self.nsamplesAdded * self.N, :] = np.reshape(modelOut, (num_to_run, self.D))
 
         # find the expected value of each output
         for i in range(self.nsamplesRun, self.nsamplesAdded):
-            # print("exp",i)
             eyVal = np.zeros(self.D)
             for j in range(0, self.N):
                 eyVal += self.y[i * self.N + j, :] * self.data.weights[j]
@@ -813,7 +691,6 @@ class Kernel(Explainer):
         s = np.sum(self.maskMatrix, 1)
         eyAdj[np.isinf(eyAdj)] = 1.
         eyAdj[np.isinf(-eyAdj)] = -50.
-        print("eyAdj:",eyAdj)
 
         # do feature selection if we have not well enumerated the space
         nonzero_inds = np.arange(self.M)
@@ -833,9 +710,6 @@ class Kernel(Explainer):
             mask_aug = np.transpose(w_sqrt_aug * np.transpose(np.vstack((self.maskMatrix, self.maskMatrix - 1))))
             eyAdj_aug[np.isinf(eyAdj_aug)] = 8.
             eyAdj_aug[np.isinf(-eyAdj_aug)] = -8.
-            # mask_aug += np.eye(mask_aug.shape[1]) * 1e-6  # Add small constant to diagonal
-            # np.fill_diagonal(mask_aug, np.ones(mask_aug.shape[1]) * 1e-6)
-            #var_norms = np.array([np.linalg.norm(mask_aug[:, i]) for i in range(mask_aug.shape[1])])
             np.fill_diagonal(mask_aug, np.diag(mask_aug) + np.ones(np.diag(mask_aug).shape)* 1e-6)
 
 
@@ -846,13 +720,11 @@ class Kernel(Explainer):
 
             # use an adaptive regularization method
             elif self.l1_reg == "auto" or self.l1_reg == "bic" or self.l1_reg == "aic":
-                print("adaptive regularisation")
                 c = "aic" if self.l1_reg == "auto" else self.l1_reg
                 try:
                     nonzero_inds = np.nonzero(LassoLarsIC(criterion=c).fit(mask_aug, eyAdj_aug).coef_)[0]
                 except:
-                    print("mask_aug",mask_aug)
-                    print("eyAdj_aug",eyAdj_aug)
+                    print("error")
                     sys.exit()
 
 
@@ -863,16 +735,13 @@ class Kernel(Explainer):
         if len(nonzero_inds) == 0:
             return np.zeros(self.M), np.ones(self.M)
 
-        print("elim")
         # eliminate one variable with the constraint that all features sum to the output
         eyAdj2 = eyAdj - self.maskMatrix[:, nonzero_inds[-1]] * (
                     self.link.f(self.fx[dim]) - self.link.f(self.fnull[dim]) + 1e-8) # added constant
-        print("etmp")
         etmp = np.transpose(np.transpose(self.maskMatrix[:, nonzero_inds[:-1]]) - self.maskMatrix[:, nonzero_inds[-1]])
         log.debug("etmp[:4,:] {0}".format(etmp[:4, :]))
 
         # solve a weighted least squares equation to estimate phi
-        print("solve least squares")
         tmp = np.transpose(np.transpose(etmp) * np.transpose(self.kernelWeights))
         etmp_dot = np.dot(np.transpose(tmp), etmp)
         try:
@@ -899,7 +768,6 @@ class Kernel(Explainer):
         phi[nonzero_inds[-1]] = (self.link.f(self.fx[dim]) - self.link.f(self.fnull[dim])) - sum(w)
         log.info("phi = {0}".format(phi))
 
-        print("clean up")
         # clean up any rounding errors
         for i in range(self.M):
             if np.abs(phi[i]) < 1e-10:
@@ -908,7 +776,3 @@ class Kernel(Explainer):
         return phi, np.ones(len(phi))
 
 
-                # except:
-                #     print("eyAdj_aug",eyAdj_aug)
-                #     nonzero_inds = np.nonzero(Lasso(alpha=self.l1_reg).fit(mask_aug, eyAdj_aug).coef_)[0]
-                #     print("SWITCHED METHOD")

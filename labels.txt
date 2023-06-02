@@ -1,3 +1,0 @@
-male (continuous line) /female (dotted line)
-macroscopic inflammation (large) / microscopic inflammation (small)
-not IBD (green) / CD no deep ulcer (orange) / CD deep ulcer (red) / UC (brown)

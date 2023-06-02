@@ -1,6 +1,0 @@
-Download data from
-
-https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE57945
-
-
-tr '\r' '\t' < GSE57945_all_samples_RPKM.txt > GSE57945_all_samples_RPKM_ALL_MOD.txt

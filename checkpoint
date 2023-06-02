@@ -1,2 +1,0 @@
-model_checkpoint_path: "encoder_ckpt"
-all_model_checkpoint_paths: "encoder_ckpt"
