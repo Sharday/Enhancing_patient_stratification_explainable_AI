@@ -41,7 +41,7 @@ explainer = objects.get_explainer(model=gmm_model_get_prediction_ae, data=x_trai
 shap_values = explainer.shap_values(X=x_test_scaled)
 print("final shap values:",shap_values)
 
-with open("../data/models/shap/all_dep_2p11_2p5_mean", "wb") as fp:   #Pickling
+with open("../data/models/shap/shap_vals", "wb") as fp:   #Pickling
     pickle.dump(shap_values, fp)
 
 
