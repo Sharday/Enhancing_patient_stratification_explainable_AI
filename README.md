@@ -1,5 +1,11 @@
 # Enhancing patient stratification and interpretability through class-contrastive and feature attribution techniques: unveiling potential therapeutic gene targets
 
+## Introduction
+
+Code for startifying patients using class-contrastive machine learning on genomic data.
+
+## Files
+
 Main files created from scratch:
 * 1_gene_sampling_heatmaps.ipynb - sampling from the RISK dataset
 * 2_preprocessing_training_autoencoder.ipynb - training the autoencoder
@@ -21,3 +27,21 @@ The following files were created from scratch for facilitation:
 * gene_shap_minimal/kmeans_gmm_eval_fns.py - includes functions to get GMM predictions
 * gene_shap_minimal/objects.py - functions to return required objects
 * gene_shap_minimal/calc_shap.py - calculates and stores SHAP values
+
+* ## Installation
+
+```r
+pip install -r requirements.txt
+```
+
+## Manuscript
+
+Forthcoming
+
+## Contact
+
+Sharday Olowu and Soumya Banerjee
+
+sylo2@cantab.ac.uk
+sb2333@cam.ac.uk
+
