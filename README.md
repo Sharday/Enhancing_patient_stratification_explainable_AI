@@ -29,7 +29,7 @@ The following files were created from scratch for facilitation:
 * gene_shap_minimal/objects.py - functions to return required objects
 * gene_shap_minimal/calc_shap.py - calculates and stores SHAP values
 
-* ## Installation
+## Installation
 
 ```r
 pip install -r requirements.txt
