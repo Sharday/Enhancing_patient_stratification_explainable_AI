@@ -2,11 +2,12 @@
 
 ## Introduction
 
-Code for startifying patients using class-contrastive machine learning on genomic data.
+Code for stratifying patients using class-contrastive machine learning on genomic data.
 
 ## Files
 
 Main files created from scratch:
+
 * 1_gene_sampling_heatmaps.ipynb - sampling from the RISK dataset
 * 2_preprocessing_training_autoencoder.ipynb - training the autoencoder
 * 3_kmeans_gmm_eval.ipynb - clustering and classification using GMMs and KMeans, including evaluation
